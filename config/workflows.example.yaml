@@ -1,0 +1,34 @@
+# Example workflows — edit, restart (no rebuild for YAML-only changes).
+triggers:
+  - id: resend-example
+    type: resend
+    path: /hooks/resend
+    secret: ${RESEND_WEBHOOK_SECRET}
+    hooks:
+      - event: email.bounced
+        actions:
+          - type: http
+            method: POST
+            url: https://example.com/alerts
+            headers:
+              Authorization: "Bearer ${ALERT_TOKEN}"
+            body: |
+              {"event":"{{.event}}","to":"{{join .data.to ", "}}"}
+
+      - event: "*"
+        actions:
+          - type: log
+            message: "resend {{.event}}"
+
+  - id: partner
+    type: generic
+    path: /hooks/partner
+    secret: ${PARTNER_SECRET}
+    header: X-Webhook-Secret
+    hooks:
+      - event: order.created
+        actions:
+          - type: http
+            method: POST
+            url: https://example.com/orders
+            body: "{{.raw}}"

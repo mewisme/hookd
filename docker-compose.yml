@@ -1,0 +1,15 @@
+services:
+  hookd:
+    image: mewisme/hookd:latest
+    container_name: hookd
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      PORT: "8080"
+      CONFIG_PATH: /config/workflows.yaml
+    volumes:
+      - ./config/workflows.yaml:/config/workflows.yaml:ro
+    restart: unless-stopped

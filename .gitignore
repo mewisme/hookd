@@ -1,0 +1,10 @@
+# Binaries
+/hookd
+*.exe
+
+# Secrets
+.env
+
+# Go
+/vendor/
+/config/workflows.yaml
