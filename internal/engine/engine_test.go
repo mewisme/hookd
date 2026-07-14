@@ -50,7 +50,7 @@ triggers:
 	if err != nil {
 		t.Fatal(err)
 	}
-	eng := engine.New(cfg)
+	eng := engine.New(cfg, "")
 	srv := httptest.NewServer(eng.Handler())
 	t.Cleanup(srv.Close)
 
@@ -110,7 +110,7 @@ triggers:
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(engine.New(cfg).Handler())
+	srv := httptest.NewServer(engine.New(cfg, "").Handler())
 	t.Cleanup(srv.Close)
 
 	body := []byte(`{"type":"order.created","data":{"id":1}}`)
@@ -142,7 +142,7 @@ func TestHealthz(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := httptest.NewServer(engine.New(cfg).Handler())
+	srv := httptest.NewServer(engine.New(cfg, "").Handler())
 	t.Cleanup(srv.Close)
 	resp, err := http.Get(srv.URL + "/healthz")
 	if err != nil {

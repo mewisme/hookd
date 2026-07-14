@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"sync"
 )
 
@@ -67,4 +68,28 @@ func GetAction(typ string) (Action, error) {
 		return nil, fmt.Errorf("unknown action type %q", typ)
 	}
 	return a, nil
+}
+
+// TriggerTypes returns sorted registered trigger type names.
+func TriggerTypes() []string {
+	triggersMu.RLock()
+	defer triggersMu.RUnlock()
+	out := make([]string, 0, len(triggers))
+	for k := range triggers {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// ActionTypes returns sorted registered action type names.
+func ActionTypes() []string {
+	actionsMu.RLock()
+	defer actionsMu.RUnlock()
+	out := make([]string, 0, len(actions))
+	for k := range actions {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }

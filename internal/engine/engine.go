@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,15 +16,21 @@ import (
 
 // Engine routes webhooks to trigger plugins and runs matching actions.
 type Engine struct {
-	cfg *config.Config
+	cfg       *config.Config
+	publicURL string // optional; when set, mount logs include full webhook URL
 	// ponytail: process-local dedup; multi-replica needs Redis.
 	seen   map[string]time.Time
 	seenMu sync.Mutex
 	ttl    time.Duration
 }
 
-func New(cfg *config.Config) *Engine {
-	return &Engine{cfg: cfg, seen: map[string]time.Time{}, ttl: 10 * time.Minute}
+func New(cfg *config.Config, publicURL string) *Engine {
+	return &Engine{
+		cfg:       cfg,
+		publicURL: strings.TrimRight(publicURL, "/"),
+		seen:      map[string]time.Time{},
+		ttl:       10 * time.Minute,
+	}
 }
 
 func (e *Engine) Handler() http.Handler {
@@ -40,7 +47,11 @@ func (e *Engine) Handler() http.Handler {
 		}
 		path := tc.Path
 		mux.HandleFunc("POST "+path, e.handleTrigger(tc, trig))
-		slog.Info("mounted trigger", "id", tc.ID, "type", tc.Type, "path", path)
+		attrs := []any{"id", tc.ID, "type", tc.Type, "path", path}
+		if e.publicURL != "" {
+			attrs = append(attrs, "url", e.publicURL+path)
+		}
+		slog.Info("mounted trigger", attrs...)
 	}
 	return mux
 }
