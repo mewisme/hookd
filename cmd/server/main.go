@@ -7,6 +7,7 @@ import (
 
 	"hookd/internal/config"
 	"hookd/internal/engine"
+	"hookd/internal/logx"
 	"hookd/internal/plugin"
 
 	_ "hookd/internal/plugin/action/http"
@@ -16,24 +17,26 @@ import (
 )
 
 func main() {
+	logger := logx.New(env("LOG_LEVEL", "info"))
+	slog.SetDefault(logger)
+
 	port := env("PORT", "8080")
 	cfgPath := env("CONFIG_PATH", "/config/workflows.yaml")
-	// PUBLIC_URL = public origin for this service (e.g. https://hooks.example.com).
 	publicURL := env("PUBLIC_URL", "")
 
 	slog.Info("registry", "triggers", plugin.TriggerTypes(), "actions", plugin.ActionTypes())
 
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
-		slog.Error("load config", "path", cfgPath, "err", err)
+		slog.Error("load config", "path", cfgPath, "error", err)
 		os.Exit(1)
 	}
 
 	eng := engine.New(cfg, publicURL)
 	addr := ":" + port
-	slog.Info("listening", "addr", addr, "config", cfgPath, "public_url", publicURL)
+	slog.Info("server starting", "addr", addr, "config", cfgPath, "public_url", publicURL)
 	if err := http.ListenAndServe(addr, eng.Handler()); err != nil {
-		slog.Error("server", "err", err)
+		slog.Error("server stopped", "error", err)
 		os.Exit(1)
 	}
 }

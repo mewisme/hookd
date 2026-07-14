@@ -86,6 +86,7 @@ go run ./cmd/server
 |----------|---------|---------|
 | `PORT` | `8080` | Listen port |
 | `CONFIG_PATH` | `/config/workflows.yaml` | Workflows file |
-| `PUBLIC_URL` | — | Public origin (e.g. `https://hooks.example.com`) |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` (JSON logs to stdout) |
+| `PUBLIC_URL` | — | Public origin (e.g. `https://hooks.example.com`); startup logs full trigger URLs |
 | `RESEND_WEBHOOK_SECRET` | — | Svix secret |
 | `DISCORD_WEBHOOK_URL` | — | Discord webhook URL |

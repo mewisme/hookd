@@ -58,11 +58,22 @@ func (e *Engine) Handler() http.Handler {
 
 func (e *Engine) handleTrigger(tc config.Trigger, trig plugin.Trigger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log := slog.With(
+			"trigger", tc.ID,
+			"plugin", tc.Type,
+			"path", tc.Path,
+			"method", r.Method,
+			"remote", r.RemoteAddr,
+		)
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
+			log.Warn("webhook read failed", "error", err, "status", 400, "duration_ms", ms(start))
 			http.Error(w, "read body", http.StatusBadRequest)
 			return
 		}
+		log.Info("webhook received", "bytes", len(body))
 
 		var verifyErr error
 		if tc.Type == "generic" && tc.Header != "" {
@@ -71,14 +82,16 @@ func (e *Engine) handleTrigger(tc config.Trigger, trig plugin.Trigger) http.Hand
 			verifyErr = trig.Verify(r.Header, body, tc.Secret)
 		}
 		if verifyErr != nil {
-			slog.Warn("verify failed", "trigger", tc.ID, "err", verifyErr)
+			log.Warn("webhook verify failed", "error", verifyErr, "status", 400, "duration_ms", ms(start))
 			http.Error(w, "invalid webhook", http.StatusBadRequest)
 			return
 		}
 
-		if id := trig.DeliveryID(r.Header); id != "" {
-			if e.duplicate(id) {
-				slog.Info("duplicate delivery skipped", "id", id, "trigger", tc.ID)
+		deliveryID := trig.DeliveryID(r.Header)
+		if deliveryID != "" {
+			log = log.With("delivery_id", deliveryID)
+			if e.duplicate(deliveryID) {
+				log.Info("webhook duplicate skipped", "status", 200, "duration_ms", ms(start))
 				w.WriteHeader(http.StatusOK)
 				return
 			}
@@ -86,7 +99,7 @@ func (e *Engine) handleTrigger(tc config.Trigger, trig plugin.Trigger) http.Hand
 
 		eventName, data, err := trig.Parse(body)
 		if err != nil {
-			slog.Warn("parse failed", "trigger", tc.ID, "err", err)
+			log.Warn("webhook parse failed", "error", err, "status", 400, "duration_ms", ms(start))
 			http.Error(w, "invalid payload", http.StatusBadRequest)
 			return
 		}
@@ -102,6 +115,12 @@ func (e *Engine) handleTrigger(tc config.Trigger, trig plugin.Trigger) http.Hand
 			}
 		}
 
+		log = log.With("event", eventName)
+		if createdAt != "" {
+			log = log.With("created_at", createdAt)
+		}
+		log.Info("webhook accepted")
+
 		ev := plugin.Event{
 			Event:     eventName,
 			CreatedAt: createdAt,
@@ -111,6 +130,7 @@ func (e *Engine) handleTrigger(tc config.Trigger, trig plugin.Trigger) http.Hand
 
 		ctx := r.Context()
 		var actionErr error
+		ran := 0
 		for _, h := range tc.Hooks {
 			if h.Event != "*" && h.Event != eventName {
 				continue
@@ -120,22 +140,38 @@ func (e *Engine) handleTrigger(tc config.Trigger, trig plugin.Trigger) http.Hand
 				act, err := plugin.GetAction(typ)
 				if err != nil {
 					actionErr = err
-					slog.Error("action lookup", "err", err)
+					log.Error("action lookup failed", "action", typ, "error", err)
 					continue
 				}
+				ran++
+				actStart := time.Now()
+				log.Info("action start", "action", typ, "hook", h.Event)
 				if err := act.Run(ctx, acfg, ev); err != nil {
 					actionErr = err
-					slog.Error("action failed", "trigger", tc.ID, "action", typ, "err", err)
+					log.Error("action failed", "action", typ, "hook", h.Event, "error", err, "duration_ms", ms(actStart))
+					continue
 				}
+				log.Info("action ok", "action", typ, "hook", h.Event, "duration_ms", ms(actStart))
 			}
 		}
 
 		if actionErr != nil && tc.FailOnError {
+			log.Error("webhook completed", "status", 500, "actions", ran, "error", actionErr, "duration_ms", ms(start))
 			http.Error(w, "action failed", http.StatusInternalServerError)
 			return
 		}
+		status := 200
+		if actionErr != nil {
+			log.Warn("webhook completed with action errors", "status", status, "actions", ran, "error", actionErr, "duration_ms", ms(start))
+		} else {
+			log.Info("webhook completed", "status", status, "actions", ran, "duration_ms", ms(start))
+		}
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func ms(start time.Time) int64 {
+	return time.Since(start).Milliseconds()
 }
 
 func (e *Engine) duplicate(id string) bool {
