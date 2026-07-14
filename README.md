@@ -88,12 +88,3 @@ go run ./cmd/server
 | `CONFIG_PATH` | `/config/workflows.yaml` | Workflows file |
 | `RESEND_WEBHOOK_SECRET` | — | Svix secret |
 | `DISCORD_WEBHOOK_URL` | — | Discord webhook URL |
-
-## Publish images
-
-Push a tag `v*` (or run the **Release** workflow manually). Multi-arch manifest (`linux/amd64`, `linux/arm64`) via Buildx cross-compile — same tag works on Intel/AMD and Apple Silicon / ARM servers:
-
-- `mewisme/hookd:<version>` + `:latest`
-- `ghcr.io/mewisme/hookd:<version>` + `:latest`
-
-Repo secrets for Docker Hub: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`. GHCR uses `GITHUB_TOKEN`.
