@@ -2,7 +2,7 @@
 
 Minimal pluggable webhook runner (Go + YAML). **Triggers** verify inbound webhooks; **actions** run outbound steps. Enable or disable providers by editing the workflow file.
 
-**Images** (Go 1.26): [`mewisme/hookd`](https://hub.docker.com/r/mewisme/hookd) · [`ghcr.io/mewisme/hookd`](https://github.com/mewisme/hookd/pkgs/container/hookd)
+[![Docker Hub](https://img.shields.io/docker/v/mewisme/hookd?label=dockerhub&logo=docker&color=2496ED)](https://hub.docker.com/r/mewisme/hookd) [![GHCR](https://img.shields.io/badge/ghcr.io-mewisme%2Fhookd-blue?logo=github)](https://github.com/mewisme/hookd/pkgs/container/hookd) [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white)](https://go.dev/) [![Release](https://img.shields.io/github/v/release/mewisme/hookd?logo=github)](https://github.com/mewisme/hookd/releases)
 
 ```bash
 docker pull mewisme/hookd:latest
