@@ -20,7 +20,7 @@ cp .env.example .env
 # DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
-2. Run (pulls `mewisme/hookd:latest`, or build locally with `--build`):
+2. Run (pulls `mewisme/hookd:latest`):
 
 ```bash
 docker compose up -d
@@ -90,3 +90,20 @@ go run ./cmd/server
 | `PUBLIC_URL` | — | Public origin (e.g. `https://hooks.example.com`); startup logs full trigger URLs |
 | `RESEND_WEBHOOK_SECRET` | — | Svix secret |
 | `DISCORD_WEBHOOK_URL` | — | Discord webhook URL |
+
+## Publish
+
+Push a tag `v*` to release via [GoReleaser](https://goreleaser.com):
+
+- GitHub Release + binaries (`linux`/`darwin`/`windows`)
+- Multi-arch Docker images (`linux/amd64`, `linux/arm64`):
+  - `mewisme/hookd:<version>` / `:latest`
+  - `ghcr.io/mewisme/hookd:<version>` / `:latest`
+
+Repo secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`. GHCR uses `GITHUB_TOKEN`.
+
+Local snapshot (no push):
+
+```bash
+goreleaser release --snapshot --clean
+```

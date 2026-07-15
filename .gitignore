@@ -1,6 +1,7 @@
 # Binaries
 /hookd
 *.exe
+/dist/
 
 # Secrets
 .env

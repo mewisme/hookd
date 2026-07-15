@@ -2,7 +2,6 @@ services:
   hookd:
     image: mewisme/hookd:latest
     container_name: hookd
-    build: .
     ports:
       - "8080:8080"
     env_file:
